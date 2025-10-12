@@ -30,7 +30,11 @@
         <jjwt>0.9.1</jjwt>
         <jaxb-api>2.3.1</jaxb-api>
         <poi>3.16</poi>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <java.version>17</java.version>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -42,7 +46,7 @@
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>${lombok}</version>
+                <version>1.18.30</version>
             </dependency>
 
             <dependency>
