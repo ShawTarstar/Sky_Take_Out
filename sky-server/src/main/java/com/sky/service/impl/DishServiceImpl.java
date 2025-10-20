@@ -18,11 +18,13 @@ import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.DataInput;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -134,5 +136,29 @@ public class DishServiceImpl implements DishService {
             });
             dishFlavorMapper.insertBatch(flavors);
         }
+    }
+
+    /**
+     * 根据分类id查询菜品
+     * @param categoryId
+     * @return
+     */
+    public List<DishVO> getByCategoryId(Long categoryId) {
+        List<Dish> dishList=dishMapper.getByCategoryId(categoryId);
+        List<DishVO> voList = dishList.stream().map(dish -> {
+            DishVO vo = new DishVO();
+            BeanUtils.copyProperties(dish, vo);
+            return vo;
+        }).collect(Collectors.toList());
+        return voList;
+    }
+
+    /**
+     * 起售停售菜品
+     * @param status
+     * @param id
+     */
+    public void startOrStop(Integer status, Long id) {
+        dishMapper.startOrStop(status,id);
     }
 }
