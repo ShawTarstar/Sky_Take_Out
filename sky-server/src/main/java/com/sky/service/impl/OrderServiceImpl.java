@@ -1,21 +1,26 @@
 package com.sky.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
-import com.sky.dto.OrdersPaymentDTO;
-import com.sky.dto.OrdersSubmitDTO;
+import com.sky.dto.*;
 import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
 import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
+import com.sky.result.PageResult;
 import com.sky.service.OrderService;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.OrderPaymentVO;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +76,10 @@ public class OrderServiceImpl implements OrderService {
         orders.setPhone(addressBook.getPhone());
         orders.setConsignee(addressBook.getConsignee());
         orders.setUserId(userId);
-
+        String address= addressBook.getProvinceName()
+                +addressBook.getCityName()+addressBook.getDistrictName()
+                +addressBook.getDetail();
+        orders.setAddress(address);
         orderMapper.insert(orders);
 
         List<OrderDetail> orderdetailList=new ArrayList<>();
@@ -146,4 +154,90 @@ public class OrderServiceImpl implements OrderService {
 
         orderMapper.update(orders);
     }
+
+    /**
+     * 管理端订单分页查询（订单搜索）
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    public PageResult conditionSearch(OrdersPageQueryDTO ordersPageQueryDTO) {
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        Page<Orders> page=orderMapper.pageQuery(ordersPageQueryDTO);
+        return new PageResult(page.getTotal(),page.getResult());
+    }
+
+    public OrderStatisticsVO statistics() {
+        return orderMapper.statistics();
+    }
+
+    /**
+     * 查询订单详情
+     * @param id
+     * @return
+     */
+    public OrderVO details(Integer id) {
+        return orderMapper.details(id);
+    }
+
+    /**
+     * 接单
+     * @param id
+     */
+    public void confirm(Long id) {
+        orderMapper.confirm(id);
+    }
+
+    /**
+     * 拒单
+     * @param ordersRejectionDTO
+     */
+    public void rejection(OrdersRejectionDTO ordersRejectionDTO) {
+        //先把订单置为取消状态，再把取消原因更新到数据库中
+        orderMapper.rejection(ordersRejectionDTO);
+    }
+
+    /**
+     * 取消订单
+     * @param ordersCancelDTO
+     */
+    public void cancel(OrdersCancelDTO ordersCancelDTO) {
+        orderMapper.cancel(ordersCancelDTO);
+    }
+
+    /**
+     * 派送订单
+     * @param id
+     */
+    public void delivery(Long id) {
+        orderMapper.delivery(id);
+    }
+
+    public void complete(Long id) {
+        orderMapper.complete(id);
+    }
+
+    /**
+     * 用户端历史订单查询
+     * @param page
+     * @param pageSize
+     * @return
+     */
+    public PageResult historyOrders(Integer page, Integer pageSize, Integer status) {
+        Long userId = BaseContext.getCurrentId();
+        PageHelper.startPage(page, pageSize);
+        Page<OrderVO> p = orderMapper.historyOrders(userId, status);
+        return new PageResult(p.getTotal(), p.getResult());
+    }
+
+    public void repetition(Long id) {
+        List<OrderDetail> orderDetailList = orderDetailMapper.selectByOrderId(id);
+        for(OrderDetail orderDetail : orderDetailList){
+            ShoppingCart shoppingCart = new ShoppingCart();
+            BeanUtils.copyProperties(orderDetail,shoppingCart);
+            shoppingCart.setUserId(BaseContext.getCurrentId());
+            shoppingCart.setCreateTime(LocalDateTime.now());
+            shoppingCartMapper.insert(shoppingCart);
+        }
+    }
+
 }

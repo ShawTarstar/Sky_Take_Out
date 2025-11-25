@@ -1,8 +1,15 @@
 package com.sky.mapper;
 
+import com.github.pagehelper.Page;
+import com.sky.dto.OrdersCancelDTO;
+import com.sky.dto.OrdersPageQueryDTO;
+import com.sky.dto.OrdersRejectionDTO;
 import com.sky.entity.Orders;
+import com.sky.vo.OrderStatisticsVO;
+import com.sky.vo.OrderVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface OrderMapper {
@@ -23,4 +30,43 @@ public interface OrderMapper {
      * @param orders
      */
     void update(Orders orders);
+
+    /**
+     * 管理端订单分页查询
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    Page<Orders> pageQuery(OrdersPageQueryDTO ordersPageQueryDTO);
+
+    /**
+     * 各个状态的订单数量统计
+     * @return
+     */
+    OrderStatisticsVO statistics();
+
+    /**
+     * 查询订单详情
+     * @param id
+     * @return
+     */
+    OrderVO details(Integer id);
+
+    @Update("update orders set status=3 where id=#{id}")
+    void confirm(Long id);
+
+    @Update("update orders set status=6," +
+            "rejection_reason=#{rejectionReason} where id=#{id}")
+    void rejection(OrdersRejectionDTO ordersRejectionDTO);
+
+    @Update("update orders set status=6," +
+            "cancel_reason=#{cancelReason} where id=#{id}")
+    void cancel(OrdersCancelDTO ordersCancelDTO);
+
+    @Update("update orders set status=4 where id=#{id}")
+    void delivery(Long id);
+
+    @Update("update orders set status=5 where id=#{id}")
+    void complete(Long id);
+
+    Page<OrderVO> historyOrders(Long userId, Integer status);
 }
